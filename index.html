@@ -6,37 +6,58 @@
   <title>Training Plan Builder</title>
   <link href="https://fonts.googleapis.com/css2?family=Playpen+Sans&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg-color: #fefefe;
+      --box-bg: #e9faff;
+      --text-color: #2B2B2B;
+      --accent: #00C0F4;
+      --border-color: #00C0F4;
+      --result-bg: #C7BFFF;
+      --result-border: #6CA793;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #1e1e1e;
+        --box-bg: #2c2c2c;
+        --text-color: #ffffff;
+        --accent: #00C0F4;
+        --border-color: #00C0F4;
+        --result-bg: #333366;
+        --result-border: #6CA793;
+      }
+    }
     body {
       font-family: 'Playpen Sans', cursive;
-      background: #fefefe;
+      background: var(--bg-color);
       margin: 0;
       padding: 20px;
-      color: #2B2B2B;
+      color: var(--text-color);
     }
     .container {
       max-width: 800px;
       margin: auto;
-      background: white;
+      background: var(--bg-color);
       border-radius: 12px;
       padding: 25px;
       box-shadow: 0 0 12px rgba(0,0,0,0.05);
+      border: 2px solid var(--border-color);
     }
     h2 {
       text-align: center;
-      color: #00C0F4;
+      color: var(--accent);
       font-size: 28px;
     }
     .box {
-      border: 2px solid #00C0F4;
+      border: 2px solid var(--border-color);
       border-radius: 12px;
       padding: 15px;
-      margin: 15px 0;
-      background: #e9faff;
+      margin: 20px 0;
+      background: var(--box-bg);
     }
     .arrow {
       text-align: center;
       font-size: 26px;
-      color: #00C0F4;
+      color: var(--accent);
     }
     select, input, button {
       width: 100%;
@@ -46,9 +67,10 @@
       font-size: 16px;
       border: 1px solid #ccc;
       border-radius: 8px;
+      box-sizing: border-box;
     }
     button {
-      background-color: #00C0F4;
+      background-color: var(--accent);
       color: white;
       font-weight: bold;
       border: none;
@@ -58,8 +80,8 @@
       background-color: #0094b7;
     }
     .result {
-      background: #C7BFFF;
-      border: 2px solid #6CA793;
+      background: var(--result-bg);
+      border: 2px solid var(--result-border);
       padding: 15px;
       margin-top: 25px;
       border-radius: 10px;
