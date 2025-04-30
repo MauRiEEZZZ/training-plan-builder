@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Training Phase Selector</title>
+
+  <style>
+    #phase-widget { font-family: Arial, Helvetica, sans-serif; max-width: 560px; margin: 20px auto; padding: 24px; border: 1px solid #ccc; border-radius: 8px; background: #fafafa; }
+    #phase-widget h2 { margin-top: 0; font-size: 1.35rem; color: #333; }
+    #phase-widget label { display: block; margin: 12px 0 4px; font-weight: 600; }
+    #phase-widget input, #phase-widget select { width: 100%; padding: 8px; border: 1px solid #bbb; border-radius: 4px; font-size: 1rem; }
+    #phase-widget button { margin-top: 16px; width: 100%; padding: 10px 0; font-size: 1rem; background: #2b6cb0; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    #phase-widget button:hover { background: #254e86; }
+    #phase-widget .result { margin-top: 20px; padding: 16px; border-radius: 6px; font-weight: 600; line-height: 1.45; }
+    .phase1 { background: #E0D9FF; }
+    .phase2 { background: #FFF7CC; }
+    .phase3 { background: #D0F0FF; }
+    .build  { background: #FFE4CC; }
+    .prep   { background: #D9F9D9; }
+    .taper  { background: #ECECEC; }
+    #visual { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 14px; }
+    .block { width: 46px; height: 46px; border: 1px solid #999; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; color: #333; }
+    .subtext { font-size: .9rem; color: #888; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+  <div id="phase-widget">
+    <h2>Training Phase Selector</h2>
+    <p style="font-size:.9rem;color:#555"><strong>Step 1 – Drag the Taper Phase</strong> onto the Monday 4 weeks before race day (shift forward 1 day if your race is Sunday).<br>Then answer below:</p>
+
+    <label for="start">Plan <em>Start Date</em> (must be a Monday):</label>
+    <input type="date" id="start" required>
+
+    <label for="race">Race Date:</label>
+    <input type="date" id="race" required>
+    <p id="weeksUntilLine" class="subtext">Weeks until event: —</p>
+
+    <label for="tp" style="margin-top:12px">Training Point:</label>
+    <select id="tp" required>
+      <option value="" disabled selected>Select…</option>
+      <option value="sc">Structured & consistent</option>
+      <option value="cu">Consistent, but unstructured</option>
+      <option value="inc">Inconsistent / injury lay-off / just raced</option>
+    </select>
+
+    <button onclick="calcPhase()">Show Plan Structure</button>
+
+    <div id="result" style="display:none"></div>
+    <div id="visual"></div>
+  </div>
+
+  <script>
+    function mondayCheck(date) { return date.getDay() === 1; }
+    function formatDate(date) { return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }); }
+
+    function updateWeeksUntil() {
+      const startVal = document.getElementById('start').value;
+      const raceVal  = document.getElementById('race').value;
+      const line     = document.getElementById('weeksUntilLine');
+      if (!startVal || !raceVal) {
+        line.textContent = 'Weeks until event: —';
+        return;
+      }
+      const start = new Date(startVal);
+      const race  = new Date(raceVal);
+      const msWeek = 7 * 24 * 60 * 60 * 1000;
+      const diff   = Math.ceil((race - start) / msWeek);
+      line.textContent = 'Weeks until event: ' + diff + ' week' + (diff !== 1 ? 's' : '');
+    }
+
+    document.getElementById('race').addEventListener('change', updateWeeksUntil);
+    document.getElementById('start').addEventListener('change', updateWeeksUntil);
+    document.addEventListener('DOMContentLoaded', updateWeeksUntil);
+
+    function calcPhase() {
+      const startVal = document.getElementById('start').value;
+      const raceVal  = document.getElementById('race').value;
+      const tp       = document.getElementById('tp').value;
+      if (!startVal || !raceVal || !tp) { alert('Please fill all fields.'); return; }
+
+      const startDate = new Date(startVal);
+      const raceDate  = new Date(raceVal);
+      if (!mondayCheck(startDate)) { alert('Start date must be a Monday.'); return; }
+      if (raceDate <= startDate) { alert('Race date must be after start date.'); return; }
+
+      const msWeek = 7 * 24 * 60 * 60 * 1000;
+      const totalWeeks = Math.ceil((raceDate - startDate) / msWeek);
+
+      const phaseClass = {
+        'Base Phase One':   'phase1',
+        'Base Phase Two':   'phase2',
+        'Base Phase Three': 'phase3',
+        'Build Phase':      'build',
+        'Preparation Phase':'prep',
+        'Taper Phase':      'taper'
+      };
+
+      let taperStart = new Date(raceDate.getTime() - 4 * msWeek);
+      const tsDay = taperStart.getDay();
+      if (tsDay !== 1) taperStart.setDate(taperStart.getDate() + ((8 - tsDay) % 7));
+
+      const resultEl = document.getElementById('result');
+      const visEl    = document.getElementById('visual');
+      let guidance  = [];
+      let blocks    = [];
+      let cssClass  = '';
+
+      if (tp === 'sc') {
+        if (totalWeeks < 13) {
+          const preWeeks = totalWeeks - 4;
+          const buildLen = Math.min(preWeeks, 4);
+          const prepLen  = Math.max(preWeeks - buildLen, 0);
+          cssClass = 'build';
+          let cursor = new Date(startDate);
+
+          if (buildLen > 0) {
+            guidance.push(`➡️ <strong>Build Phase</strong> for ${buildLen} week${buildLen !== 1 ? 's' : ''} starting ${formatDate(cursor)}.`);
+            blocks.push({ name: 'Build Phase', len: buildLen });
+            cursor.setTime(cursor.getTime() + buildLen * msWeek);
+          }
+          if (prepLen > 0) {
+            guidance.push(`➡️ <strong>Preparation Phase</strong> for ${prepLen} week${prepLen !== 1 ? 's' : ''} starting ${formatDate(cursor)}.`);
+            blocks.push({ name: 'Preparation Phase', len: prepLen });
+            cursor.setTime(cursor.getTime() + prepLen * msWeek);
+          }
+          guidance.push(`➡️ <strong>Taper Phase</strong> for 4 weeks starting ${formatDate(taperStart)} leading into race week.`);
+          blocks.push({ name: 'Taper Phase', len: 4 });
+
+        } else {
+          const freeWeeks = totalWeeks - 8;
+          const remainder = freeWeeks % 4;
+          let startPhase = '';
+          if (totalWeeks >= 21)      startPhase = 'Base Phase One';
+          else if (totalWeeks >= 17) startPhase = 'Base Phase Two';
+          else                        startPhase = 'Base Phase Three';
+          cssClass = phaseClass[startPhase];
+
+          let cursor = new Date(startDate);
+          const firstLen = remainder > 0 ? (4 - remainder) : 4;
+          guidance.push(`➡️ <strong>${startPhase}</strong> for ${firstLen} week${firstLen !== 1 ? 's' : ''} starting ${formatDate(cursor)}.`);
+          blocks.push({ name: startPhase, len: firstLen });
+          cursor.setTime(cursor.getTime() + firstLen * msWeek);
+
+          const order = ['Base Phase One','Base Phase Two','Base Phase Three','Build Phase'];
+          let idx = order.indexOf(startPhase);
+          let remaining = freeWeeks - firstLen;
+          while (remaining >= 4 && idx < order.length - 1) {
+            idx++;
+            const ph = order[idx];
+            guidance.push(`➡️ <strong>${ph}</strong> for 4 weeks starting ${formatDate(cursor)}.`);
+            blocks.push({ name: ph, len: 4 });
+            cursor.setTime(cursor.getTime() + 4 * msWeek);
+            remaining -= 4;
+          }
+          guidance.push(`➡️ <strong>Preparation Phase</strong> for 4 weeks starting ${formatDate(cursor)}.`);
+          blocks.push({ name: 'Preparation Phase', len: 4 });
+          guidance.push(`➡️ <strong>Taper Phase</strong> for 4 weeks starting ${formatDate(taperStart)} leading into race week.`);
+          blocks.push({ name: 'Taper Phase', len: 4 });
+        }
+
+      } else {
+        let startPhase = tp === 'cu'
+          ? (totalWeeks >= 17 ? 'Base Phase One' : totalWeeks >= 13 ? 'Base Phase Two' : 'Base Phase Three')
+          : 'Base Phase One';
+        cssClass = phaseClass[startPhase];
+        let cursor = new Date(startDate);
+        const freeWeeks = Math.floor((taperStart - startDate) / msWeek);
+        const order = ['Base Phase One','Base Phase Two','Base Phase Three','Build Phase','Preparation Phase'];
+        let idx = order.indexOf(startPhase);
+        let remaining = freeWeeks;
+
+        guidance.push(`➡️ <strong>${startPhase}</strong> for 4 weeks starting ${formatDate(cursor)}.`);
+        blocks.push({ name: startPhase, len: 4 });
+        cursor.setTime(cursor.getTime() + 4 * msWeek);
+        remaining -= 4;
+
+        while (remaining >= 4 && idx < order.length - 1) {
+          idx++;
+          const ph = order[idx];
+          guidance.push(`➡️ <strong>${ph}</strong> for 4 weeks starting ${formatDate(cursor)}.`);
+          blocks.push({ name: ph, len: 4 });
+          cursor.setTime(cursor.getTime() + 4 * msWeek);
+          remaining -= 4;
+        }
+        if (remaining > 0) {
+          const nextPh = order[Math.min(idx + 1, order.length - 1)];
+          guidance.push(`➡️ <strong>${nextPh}</strong> for ${remaining} week${remaining !== 1 ? 's' : ''} starting ${formatDate(cursor)}.`);
+          blocks.push({ name: nextPh, len: remaining });
+          cursor.setTime(cursor.getTime() + remaining * msWeek);
+        }
+        guidance.push(`➡️ <strong>Taper Phase</strong> for 4 weeks starting ${formatDate(taperStart)} leading into race week.`);
+        blocks.push({ name: 'Taper Phase', len: 4 });
+      }
+
+      resultEl.className     = 'result ' + cssClass;
+      resultEl.innerHTML     = guidance.join('<br>');
+      resultEl.style.display = 'block';
+      visEl.innerHTML        = '';
+      blocks.forEach(b => {
+        for (let i = 0; i < b.len; i++) {
+          const div = document.createElement('div');
+          div.className = 'block ' + phaseClass[b.name];
+          visEl.appendChild(div);
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>
