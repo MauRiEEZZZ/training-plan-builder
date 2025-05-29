@@ -137,18 +137,56 @@
         guidance.push(`➡️ <strong>Taper Phase</strong> for 4 weeks starting ${formatDate(taperStart)} leading into race week.`);
         blocks.push({name:'Taper Phase',len:4});
       } else {
-        // ≥13: Base blocks + Prep + Taper
-        const freeW=totalWeeks-8, rem=freeW%4;
-        let sp=''; if (totalWeeks>=21) sp='Base Phase One'; else if (totalWeeks>=17) sp='Base Phase Two'; else sp='Base Phase Three';
-        cssClass=phaseClass[sp]; let cursor=new Date(startDate);
-        const fLen= rem>0?4-rem:4;
+        // ≥13: Base blocks + Build + Prep + Taper
+        // Total weeks available before taper
+        const weeksBeforeTaper = Math.floor((taperStart - startDate) / msWeek);
+        // Reserve 4 weeks for Prep (mandatory)
+        const weeksForBaseAndBuild = weeksBeforeTaper - 4;
+        
+        // Determine starting phase
+        let sp=''; 
+        if (totalWeeks>=21) sp='Base Phase One'; 
+        else if (totalWeeks>=17) sp='Base Phase Two'; 
+        else sp='Base Phase Three';
+        
+        cssClass=phaseClass[sp]; 
+        let cursor=new Date(startDate);
+        
+        // Calculate first phase length to align with 4-week blocks
+        const rem = weeksForBaseAndBuild % 4;
+        const fLen = rem > 0 ? rem : 4;
+        
         guidance.push(`➡️ <strong>${sp}</strong> for ${fLen} week${fLen!==1?'s':''} starting ${formatDate(cursor)}.`);
-        blocks.push({name:sp,len:fLen}); cursor.setTime(cursor.getTime()+fLen*msWeek);
+        blocks.push({name:sp,len:fLen}); 
+        cursor.setTime(cursor.getTime()+fLen*msWeek);
+        
+        // Fill remaining weeks with 4-week blocks
         const order=['Base Phase One','Base Phase Two','Base Phase Three','Build Phase'];
-        let idx=order.indexOf(sp), remW=freeW-fLen;
-        while(remW>=4&&idx<order.length-1){ idx++; const ph=order[idx]; guidance.push(`➡️ <strong>${ph}</strong> for 4 weeks starting ${formatDate(cursor)}.`); blocks.push({name:ph,len:4}); cursor.setTime(cursor.getTime()+4*msWeek); remW-=4;}        
+        let idx=order.indexOf(sp);
+        let remW=weeksForBaseAndBuild-fLen;
+        
+        while(remW>=4 && idx<order.length-1){ 
+          idx++; 
+          const ph=order[idx]; 
+          guidance.push(`➡️ <strong>${ph}</strong> for 4 weeks starting ${formatDate(cursor)}.`); 
+          blocks.push({name:ph,len:4}); 
+          cursor.setTime(cursor.getTime()+4*msWeek); 
+          remW-=4;
+        }
+        
+        // Handle any remaining weeks (should go to Build Phase)
+        if(remW > 0) {
+          const nextPhase = idx < order.length-1 ? order[idx+1] : 'Build Phase';
+          guidance.push(`➡️ <strong>${nextPhase}</strong> for ${remW} week${remW!==1?'s':''} starting ${formatDate(cursor)}.`); 
+          blocks.push({name:nextPhase,len:remW}); 
+          cursor.setTime(cursor.getTime()+remW*msWeek);
+        }
+        
+        // Add Prep Phase (always 4 weeks)
         guidance.push(`➡️ <strong>Preparation Phase</strong> for 4 weeks starting ${formatDate(cursor)}.`);
         blocks.push({name:'Preparation Phase',len:4});
+        
+        // Add Taper Phase
         guidance.push(`➡️ <strong>Taper Phase</strong> for 4 weeks starting ${formatDate(taperStart)} leading into race week.`);
         blocks.push({name:'Taper Phase',len:4});
       }
