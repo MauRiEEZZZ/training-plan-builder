@@ -59,10 +59,9 @@
   <h2>Training Phase Selector</h2>
   <p style="font-size:.9rem"><strong>Step 1 – Drag the Taper Phase</strong> onto the Monday 4 weeks before race day (shift forward 1 day if your race is Sunday).<br>Then answer below:</p>
   <label for="start">Plan <em>Start Date</em> (must be a Monday):</label>
-  <input type="date" id="start" required>
-  <input type="text" id="datepicker" />
+  <input type="text" id="start" required>
   <label for="race">Race Date:</label>
-  <input type="date" id="race" required>
+  <input type="text" id="race" required>
   <p id="weeksUntilLine" class="subtext">Weeks until event: —</p>
   <label for="tp" style="margin-top:12px">Training Point:</label>
   <select id="tp" required>
@@ -80,11 +79,17 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js" crossorigin="anonymous" referrerpolicy="no-referrer" ></script>
 <script>
 $(function () {
-    $("#datepicker").datepicker({
-        beforeShowDay: function (d) {
-            var day = d.getDay();
-            return day == 1;
-        },
+    $("#start").datepicker({
+      showWeek: true,
+      firstDay: 1,
+      beforeShowDay: function (d) {
+          var day = d.getDay();
+          return [day == 1];
+      },
+    });
+    $("#race").datepicker({
+      showWeek: true,
+      firstDay: 1
     });
 });
 </script>
